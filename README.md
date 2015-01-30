@@ -1,4 +1,6 @@
-Simple REST API in Play
+PATCH operation example
 -----------------------
 
-An activator [template](https://typesafe.com/activator/templates) for implementing Json based [REST API](https://www.playframework.com/documentation/2.3.x/ScalaJsonHttp).
+Usage:
+
+curl -X PATCH -H "Content-Type: text/json" -d '{"op":"put", "path":"headliner/name", "value":"This will be the new headliner name"}' http://localhost:9000/events
