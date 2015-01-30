@@ -32,7 +32,7 @@ object Application extends Controller {
     val key = pathList.takeRight(1).head
     val startPath = pathList.dropRight(1)
 
-    testEvent = patch.get.op match {
+    val jsonResult = patch.get.op match {
       case "put" => {
         val path = applyPathBits(__, startPath.toList)
 
@@ -40,13 +40,26 @@ object Application extends Controller {
           __.read[JsObject].map{ o => o ++ Json.obj( key -> patch.get.value ) }
         )
 
-        Json.fromJson[Event](obj.transform(transform).get).get
+        obj.transform(transform) match {
+          case o: JsSuccess[JsObject] => {
+            Json.fromJson[Event](o.get) match {
+              case s: JsSuccess[Event] => {
+                testEvent = s.get // update the test event in memory to simulate persistence
+                o.get
+              }
+              case _ => getJsonError("Could not save updated event!")
+            }
+          }
+          case _ => getJsonError(s"Field '${patch.get.path}' does not exist!")
+        }
       }
-      case _ => { testEvent }
+      case _ => { getJsonError(s"Operation '${patch.get.op}' not supported.") }
     }
 
-    Ok(Json.toJson(testEvent))
+    Ok(jsonResult)
   }
+
+  def getJsonError(message: String): JsObject = Json.obj("error" -> message)
 
   def applyPathBits(path: JsPath, restOfPath: List[String]): JsPath = {
     if(restOfPath.size == 0) {
